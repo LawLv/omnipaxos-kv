@@ -118,10 +118,30 @@ impl Client {
 
     async fn send_request(&mut self, is_write: bool) {
         let key = self.next_request_id.to_string();
-        let cmd = match is_write {
-            true => KVCommand::Put(key.clone(), key),
-            false => KVCommand::Get(key),
+        // let cmd = match is_write {
+        //     true => KVCommand::Put(key.clone(), key),
+        //     false => KVCommand::Get(key),
+        // };
+        // 根据写/读操作构造对应的 SQL 查询
+        let (sql_query, consistency) = if is_write {
+            // 这里以简单示例：将数据写入一个名为 kv_table 的表中
+            (
+                format!(
+                    "INSERT INTO kv_table(key, value) VALUES ('{}', '{}') \
+                    ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value;",
+                    key, key
+                ),
+                // 对于写操作，通常选择领导者一致性
+                ConsistencyLevel::Leader,
+            )
+        } else {
+            (
+                format!("SELECT value FROM kv_table WHERE key = '{}';", key),
+                // 读取可以根据需要选择一致性级别
+                ConsistencyLevel::Local,
+            )
         };
+        let cmd = KVCommand::SQL(sql_query, consistency);
         let request = ClientMessage::Append(self.next_request_id, cmd);
         debug!("Sending {request:?}");
         self.network.send(self.active_server, request).await;

@@ -61,10 +61,19 @@ pub mod kv {
     }
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub enum ConsistencyLevel {
+        Leader,
+        Local,
+        Linearizable,
+    }
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub enum KVCommand {
         Put(String, String),
         Delete(String),
         Get(String),
+        // 新增 SQL 命令：附带 SQL 查询字符串和一致性级别
+        SQL(String, ConsistencyLevel),
     }
 
     #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -89,6 +98,8 @@ pub mod kv {
                         }
                     }
                     KVCommand::Get(_) => (),
+                    // 新增 SQL 分支：SQL 命令不改变存储状态，直接忽略
+                    KVCommand::SQL(_, _) => (),
                 }
             }
             // remove keys that were put back

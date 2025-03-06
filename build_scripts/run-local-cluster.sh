@@ -3,6 +3,8 @@
 usage="Usage: run-local-cluster.sh"
 cluster_size=3
 rust_log="info"
+export DATABASE_URL="postgres://kv_user:password@localhost:5432/omnipaxos_kv"
+
 
 # Clean up child processes
 interrupt() {

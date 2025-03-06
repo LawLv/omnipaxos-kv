@@ -18,6 +18,8 @@ services:
     container_name: s1
     environment:
       <<: *common-server-variables
+      DATABASE_URL: "wonderful_ellis://kv_user:password@postgres:5432/omnipaxos_kv"
+      # 如果你用 Docker 部署数据库，可能需要将主机名改成对应的容器名（如上例中使用 "postgres"），并确保网络配置正确。
     volumes:
       - ./server-1-config.toml:/app/server-config.toml
       - ./cluster-config.toml:/app/cluster-config.toml
@@ -27,6 +29,7 @@ services:
     container_name: s2
     environment:
       <<: *common-server-variables
+      DATABASE_URL: "wonderful_ellis://kv_user:password@postgres:5432/omnipaxos_kv"
     volumes:
       - ./server-2-config.toml:/app/server-config.toml
       - ./cluster-config.toml:/app/cluster-config.toml
@@ -36,6 +39,7 @@ services:
     container_name: s3
     environment:
       <<: *common-server-variables
+      DATABASE_URL: "wonderful_ellis://kv_user:password@postgres:5432/omnipaxos_kv"
     volumes:
       - ./server-3-config.toml:/app/server-config.toml
       - ./cluster-config.toml:/app/cluster-config.toml
