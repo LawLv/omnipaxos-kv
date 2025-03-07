@@ -101,6 +101,12 @@ impl Client {
             self.id,
             self.client_data.response_count(),
         );
+
+        // 固定等待5秒以确保最后的响应到达
+        let wait_duration = Duration::from_secs(5);
+        info!("{}: Waiting an extra {} seconds for pending responses...", self.id, wait_duration.as_secs());
+        tokio::time::sleep(wait_duration).await;
+        
         self.network.shutdown();
         self.save_results().expect("Failed to save results");
     }

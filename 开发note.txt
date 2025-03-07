@@ -1,3 +1,21 @@
-在 common/kv.rs 中更新或新增一个变体之后，match函数匹配不上
-
 提示： 实现真正的线性化读取可能需要在服务器层做额外的协调，比如确保在返回查询结果前，当前节点已经处理了所有先前的写入命令。你可以先实现简单版本，后续再做精细调控。
+
+启动服务器集群 (run-local-cluster.sh)
+- 脚本依次启动了三个服务器实例(server-1-config.toml、server-2-config.toml、server-3-config.toml)
+- 调用 Database::new() 连接 PostgreSQL，并执行建表操作（CREATE TABLE IF NOT EXISTS）
+- 通过 OmniPaxos 协议建立内部通信和复制机制，确保集群内数据的一致性。
+
+启动客户端 (run-local-client.sh)
+- (client-1-config.toml 和 client-2-config.toml)，定义了服务器地址、请求速率、请求类型等参数。
+- 首先与服务器建立 TCP 连接，通过注册消息（ClientRegister）识别并等待服务器发出的启动信号。
+- 发送 SQL 请求，写入（INSERT ... ON CONFLICT DO UPDATE）和查询（SELECT）操作。
+
+
+
+
+
+
+
+
+
+
