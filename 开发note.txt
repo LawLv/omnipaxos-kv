@@ -11,6 +11,11 @@
 - 发送 SQL 请求，写入（INSERT ... ON CONFLICT DO UPDATE）和查询（SELECT）操作。
 
 
+3/7
+添加了select时，consistency level的区分，local是直接查询，leader是判断后如果不是leader则转发给leader。实现在server.rs的update_database_and_respond。
+但是脚本运行出现较多重复消息语句，有bug
+
+
 
 
 

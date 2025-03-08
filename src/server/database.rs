@@ -2,6 +2,8 @@ use omnipaxos_kv::common::kv::KVCommand;
 // use std::collections::HashMap;
 use sqlx::postgres::PgPoolOptions;
 use std::env;
+use omnipaxos_kv::common::kv::ConsistencyLevel;
+use std::time::Duration;
 
 pub struct Database {
     pool: sqlx::PgPool,
@@ -35,25 +37,39 @@ impl Database {
     pub async fn handle_command(&self, command: KVCommand) -> Option<Option<String>> {
         match command {
             // 对于旧的 Put/Delete/Get，如果还要支持，可以调用内部转换为 SQL 语句
-            KVCommand::SQL(query, _consistency) => {
-                // match consistency {
-                //     ConsistencyLevel::Leader => {
-                //         // 检查当前节点是否为领导者，如果不是则考虑转发或返回错误（这部分可能需要在 server 层处理）
-                //         // 此处示例中直接执行查询
-                //     },
-                //     ConsistencyLevel::Local => { /* 直接执行查询 */ },
-                //     ConsistencyLevel::Linearizable => {
-                //         // 这里可以添加等待所有日志应用完毕的逻辑，确保读取的线性化一致性
-                //     },
-                // }
-                // 简单判断：以 SELECT 开头的视为读取，否则为写入
+            KVCommand::SQL(query, consistency) => {
                 if query.trim().to_uppercase().starts_with("SELECT") {
                     // 执行查询，返回查询到的第一个值（示例中只处理一行一列）
-                    let result = sqlx::query_scalar::<_, String>(&query)
-                        .fetch_one(&self.pool)
-                        .await
-                        .ok();
-                    Some(result)
+                    match consistency {
+                        ConsistencyLevel::Local => {
+                            // 本地读取：直接执行查询
+                            let result = sqlx::query_scalar::<_, String>(&query)
+                                .fetch_one(&self.pool)
+                                .await
+                                .ok();
+                            Some(result)
+                        },
+                        ConsistencyLevel::Leader => {
+                            // Leader读取：假设当前节点是领导者（检查在update_database_and_respond）
+                            log::debug!("Executing leader read");
+                            let result = sqlx::query_scalar::<_, String>(&query)
+                                .fetch_one(&self.pool)
+                                .await
+                                .ok();
+                            Some(result)
+                        },
+                        ConsistencyLevel::Linearizable => {
+                            // 如果需要实现线性化读取，可以在这里等待所有挂起写入应用完毕
+                            log::debug!("Executing linearizable read (waiting for log to catch up)");
+                            // 例如简单等待一段时间（实际实现可能需要更精细的同步机制）
+                            tokio::time::sleep(Duration::from_millis(50)).await;
+                            let result = sqlx::query_scalar::<_, String>(&query)
+                                .fetch_one(&self.pool)
+                                .await
+                                .ok();
+                            Some(result)
+                        },
+                    }
                 } else {
                     // 写入操作
                     let _ = sqlx::query(&query)

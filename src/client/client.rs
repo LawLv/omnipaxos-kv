@@ -141,10 +141,15 @@ impl Client {
                 ConsistencyLevel::Leader,
             )
         } else {
+            let read_consistency = self.config.read_consistency.as_str();
+            let consistency = match read_consistency {
+                "leader" => ConsistencyLevel::Leader,
+                "linearizable" => ConsistencyLevel::Linearizable,
+                _ => ConsistencyLevel::Local,
+            };//根据配置文件的一致性读取
             (
                 format!("SELECT value FROM kv_table WHERE key = '{}';", key),
-                // 读取可以根据需要选择一致性级别
-                ConsistencyLevel::Local,
+                consistency,
             )
         };
         let cmd = KVCommand::SQL(sql_query, consistency);

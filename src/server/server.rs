@@ -1,3 +1,6 @@
+use omnipaxos::messages::sequence_paxos::PaxosMessage;
+use omnipaxos::messages::sequence_paxos::PaxosMsg;
+use omnipaxos_kv::common::kv::ConsistencyLevel;
 use crate::{configs::OmniPaxosKVConfig, database::Database, network::Network};
 use chrono::Utc;
 use log::*;
@@ -132,9 +135,35 @@ impl OmniPaxosServer {
         }
     }
 
+    fn create_forwarded_message(&self, command: Command, leader: u64) -> Message<Command> {
+        let proposal_msg = PaxosMessage::<Command> {
+            from: self.id,
+            to: leader,
+            msg: PaxosMsg::ProposalForward(vec![command]),
+        };
+        Message::SequencePaxos(proposal_msg)
+    }
+
     async fn update_database_and_respond(&mut self, commands: Vec<Command>) {
         // TODO: batching responses possible here (batch at handle_cluster_messages)
         for command in commands {
+            // 针对 SQL 命令，如果要求 Leader 读取则检查当前节点是否为领导者
+            if let KVCommand::SQL(_, consistency) = &command.kv_cmd {
+                if *consistency == ConsistencyLevel::Leader {
+                    if let Some((leader, _)) = self.omnipaxos.get_current_leader() {
+                        if leader != self.id {
+                            log::info!(
+                                "Leader read requested for command {} but current node {} is not leader (leader is {}). Forwarding request.",
+                                command.id, self.id, leader
+                            );
+                            // 直接转发原始命令给领导者
+                            let forward_msg = self.create_forwarded_message(command.clone(), leader);
+                            self.network.send_to_cluster(leader, ClusterMessage::OmniPaxosMessage(forward_msg));
+                            continue;
+                        }
+                    }
+                }
+            }
             let read = self.database.handle_command(command.kv_cmd).await;
             if command.coordinator_id == self.id {
                 let response = match read {

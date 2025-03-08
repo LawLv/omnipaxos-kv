@@ -13,6 +13,7 @@ pub struct ClientConfig {
     pub sync_time: Option<Timestamp>,
     pub summary_filepath: String,
     pub output_filepath: String,
+    pub read_consistency: String, // 新增字段，取值可为 "leader", "local", 或 "linearizable"
 }
 
 impl ClientConfig {

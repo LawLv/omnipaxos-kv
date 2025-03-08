@@ -60,7 +60,7 @@ pub mod kv {
         pub kv_cmd: KVCommand,
     }
 
-    #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
     pub enum ConsistencyLevel {
         Leader,
         Local,
