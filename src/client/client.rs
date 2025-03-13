@@ -16,6 +16,7 @@ pub struct Client {
     active_server: NodeId,
     final_request_count: Option<usize>,
     next_request_id: usize,
+    pub inserted_keys: Vec<String>, // 声明用于存储已插入的键
 }
 
 impl Client {
@@ -33,6 +34,7 @@ impl Client {
             config,
             final_request_count: None,
             next_request_id: 0,
+            inserted_keys: Vec::new(), 
         }
     }
 
@@ -130,6 +132,7 @@ impl Client {
         // };
         // 根据写/读操作构造对应的 SQL 查询
         let (sql_query, consistency) = if is_write {
+            self.inserted_keys.push(key.clone());
             // 这里以简单示例：将数据写入一个名为 kv_table 的表中
             (
                 format!(
@@ -141,6 +144,14 @@ impl Client {
                 ConsistencyLevel::Leader,
             )
         } else {
+            if self.inserted_keys.is_empty() {//如果没有已插入
+                debug!("No keys inserted yet, skipping read request");
+                return;
+            }
+            let mut rng = rand::thread_rng();//随机查询一个已插入的
+            let idx = rng.gen_range(0..self.inserted_keys.len());
+            let key = self.inserted_keys[idx].clone();
+
             let read_consistency = self.config.read_consistency.as_str();
             let consistency = match read_consistency {
                 "leader" => ConsistencyLevel::Leader,

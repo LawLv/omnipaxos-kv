@@ -15,6 +15,8 @@
 添加了select时，consistency level的区分，local是直接查询，leader是判断后如果不是leader则转发给leader。实现在server.rs的update_database_and_respond。
 但是脚本运行出现较多重复消息语句，有bug
 
+3/12
+由于client的leader级别select请求会被leader处理，然后结果发送给对应client。所以对于leader级别的select，leader处理后应该发送给对应的server，转发回复给client
 
 
 

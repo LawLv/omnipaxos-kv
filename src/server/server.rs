@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use omnipaxos::messages::sequence_paxos::PaxosMessage;
 use omnipaxos::messages::sequence_paxos::PaxosMsg;
 use omnipaxos_kv::common::kv::ConsistencyLevel;
@@ -27,6 +28,7 @@ pub struct OmniPaxosServer {
     omnipaxos_msg_buffer: Vec<Message<Command>>,
     config: OmniPaxosKVConfig,
     peers: Vec<NodeId>,
+    pending_leader_reads: HashMap<usize, Command>, // CommandId assumed to be usize
 }
 
 impl OmniPaxosServer {
@@ -47,6 +49,7 @@ impl OmniPaxosServer {
             omnipaxos_msg_buffer,
             peers: config.get_peers(config.local.server_id),
             config,
+            pending_leader_reads: HashMap::new(),
         }
     }
 
@@ -135,39 +138,68 @@ impl OmniPaxosServer {
         }
     }
 
-    fn create_forwarded_message(&self, command: Command, leader: u64) -> Message<Command> {
-        let proposal_msg = PaxosMessage::<Command> {
-            from: self.id,
-            to: leader,
-            msg: PaxosMsg::ProposalForward(vec![command]),
-        };
-        Message::SequencePaxos(proposal_msg)
-    }
+    // fn create_forwarded_message(&self, command: Command, leader: u64) -> Message<Command> {
+    //     info!("[{}]------------transferring msg {} to [{}]-----------",self.id, command.id, leader);
+    //     let proposal_msg = PaxosMessage::<Command> {
+    //         from: self.id,
+    //         to: leader,
+    //         msg: PaxosMsg::ProposalForward(vec![command]),
+    //     };
+    //     Message::SequencePaxos(proposal_msg)
+    // }
 
     async fn update_database_and_respond(&mut self, commands: Vec<Command>) {
         // TODO: batching responses possible here (batch at handle_cluster_messages)
         for command in commands {
-            // 针对 SQL 命令，如果要求 Leader 读取则检查当前节点是否为领导者
-            if let KVCommand::SQL(_, consistency) = &command.kv_cmd {
-                if *consistency == ConsistencyLevel::Leader {
+            // 检查是否是 SQL 命令以及是否为 SELECT 操作
+            if let KVCommand::SQL(sql_str, consistency) = &command.kv_cmd {
+                let is_read = sql_str.trim().to_uppercase().starts_with("SELECT");
+                //是leader级别的 读命令
+                if is_read && *consistency == ConsistencyLevel::Leader {
                     if let Some((leader, _)) = self.omnipaxos.get_current_leader() {
+                        // 自己不是leader，等待
                         if leader != self.id {
                             log::info!(
-                                "Leader read requested for command {} but current node {} is not leader (leader is {}). Forwarding request.",
-                                command.id, self.id, leader
+                                "[{}] Leader-level read command {} received, but current node is not leader (leader is {}). Waiting for the leader's response.",
+                                self.id, command.id, leader
                             );
-                            // 直接转发原始命令给领导者
-                            let forward_msg = self.create_forwarded_message(command.clone(), leader);
-                            self.network.send_to_cluster(leader, ClusterMessage::OmniPaxosMessage(forward_msg));
+                            // 将请求记录到 pending 队列中
+                            self.pending_leader_reads.insert(command.id, command.clone());
+                            // let forward_msg = self.create_forwarded_message(command.clone(), leader);
+                            // self.network.send_to_cluster(leader, ClusterMessage::OmniPaxosMessage(forward_msg));
+                            continue;
+                        }
+                        //自己是leader，查询
+                        if leader == self.id {
+                            log::info!("[node {}] Leader processing read command {} locally.", self.id, command.id);
+                            let read_result = self.database.handle_command(command.kv_cmd.clone()).await;
+                            // 如果原始协调者不是leader，则发送 LeaderResponse 回原节点
+                            if command.coordinator_id != self.id {
+                                let cluster_msg = ClusterMessage::LeaderResponse {
+                                    cmd_id: command.id,
+                                    read_result: read_result.unwrap_or(None),
+                                    client_id: command.client_id,
+                                };
+                                self.network.send_to_cluster(command.coordinator_id, cluster_msg);
+                            } else {
+                                // 如果原协调者就是本节点，则直接回复客户端
+                                let response = match read_result {
+                                    Some(result) => ServerMessage::Read(command.id, result),
+                                    None => ServerMessage::Write(command.id),
+                                };
+                                self.network.send_to_client(command.client_id, response);
+                            }
                             continue;
                         }
                     }
                 }
             }
-            let read = self.database.handle_command(command.kv_cmd).await;
+            // 对于insert / 普通级别的select，在本地执行
+            log::info!("[{}] Handling command {} locally.", self.id, command.id);
+            let read_result = self.database.handle_command(command.kv_cmd.clone()).await;
             if command.coordinator_id == self.id {
-                let response = match read {
-                    Some(read_result) => ServerMessage::Read(command.id, read_result),
+                let response = match read_result {
+                    Some(result) => ServerMessage::Read(command.id, result),
                     None => ServerMessage::Write(command.id),
                 };
                 self.network.send_to_client(command.client_id, response);
@@ -213,6 +245,25 @@ impl OmniPaxosServer {
                     received_start_signal = true;
                     self.send_client_start_signals(start_time);
                 }
+                // 新增处理领导者返回的读取结果
+                ClusterMessage::LeaderResponse { cmd_id, read_result, client_id } => {
+                    log::info!(
+                        "[{}] Received LeaderResponse for command {} from leader. Sending result to client {}.",
+                        self.id, cmd_id, client_id
+                    );
+                    // 如果 pending_leader_reads 中找到该命令，则移除，并发送响应
+                    if self.pending_leader_reads.remove(&cmd_id).is_some() {
+                        let response = ServerMessage::Read(cmd_id, read_result);
+                        self.network.send_to_client(client_id, response);
+                    } else {
+                        log::warn!(
+                            "[{}] LeaderResponse for command {} arrived but no pending request found. Sending response anyway.",
+                            self.id, cmd_id
+                        );
+                        let response = ServerMessage::Read(cmd_id, read_result);
+                        self.network.send_to_client(client_id, response);
+                    }
+                },
             }
         }
         self.send_outgoing_msgs();

@@ -1,4 +1,5 @@
 pub mod messages {
+    use crate::common::kv::ClientId;//导入clientid
     use omnipaxos::{messages::Message as OmniPaxosMessage, util::NodeId};
     use serde::{Deserialize, Serialize};
 
@@ -17,6 +18,11 @@ pub mod messages {
     pub enum ClusterMessage {
         OmniPaxosMessage(OmniPaxosMessage<Command>),
         LeaderStartSignal(Timestamp),
+        LeaderResponse {
+            cmd_id: CommandId,
+            read_result: Option<String>,
+            client_id: ClientId,
+        },
     }
 
     #[derive(Clone, Debug, Serialize, Deserialize)]
