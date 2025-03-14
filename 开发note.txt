@@ -18,7 +18,12 @@
 3/12
 由于client的leader级别select请求会被leader处理，然后结果发送给对应client。所以对于leader级别的select，leader处理后应该发送给对应的server，转发回复给client
 
-
+3/14
+Linearizable读取 添加等待逻辑。：
+当收到一个一致性级别为 Linearizable 的 SELECT 请求时，
+检查当前节点的日志应用进度（例如 current_decided_idx 与 self.omnipaxos.get_decided_idx()）。
+如果当前节点尚未应用所有已决命令，则等待一段时间（可以轮询或使用条件变量等机制）。
+等待到本地状态完全同步后，再执行 SELECT 查询，确保读取结果反映所有先前的写入。
 
 
 

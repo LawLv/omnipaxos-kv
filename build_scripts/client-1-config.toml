@@ -4,7 +4,7 @@ server_address = "127.0.0.1:8001"
 summary_filepath = "./logs/client-1.json"
 output_filepath = "./logs/client-1.csv"
 
-read_consistency = "leader"
+read_consistency = "linearizable"
 
 # Defining TOML vector of (duration_sec, requests_per_sec, read_ratio) which determines the behavior of the client requests
 [[requests]]

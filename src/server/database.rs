@@ -32,6 +32,9 @@ impl Database {
         .expect("Failed to create kv_table");
         Self { pool }
     }
+    pub fn get_pool(&self) -> &sqlx::PgPool {
+        &self.pool
+    }
 
     // 修改 handle_command 为 async 并支持 SQL 命令
     pub async fn handle_command(&self, command: KVCommand) -> Option<Option<String>> {

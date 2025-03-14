@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use omnipaxos::messages::sequence_paxos::PaxosMessage;
-use omnipaxos::messages::sequence_paxos::PaxosMsg;
+// use omnipaxos::messages::sequence_paxos::PaxosMessage;
+// use omnipaxos::messages::sequence_paxos::PaxosMsg;
 use omnipaxos_kv::common::kv::ConsistencyLevel;
 use crate::{configs::OmniPaxosKVConfig, database::Database, network::Network};
 use chrono::Utc;
@@ -192,6 +192,26 @@ impl OmniPaxosServer {
                             continue;
                         }
                     }
+                }else if is_read && *consistency == ConsistencyLevel::Linearizable {
+                    log::debug!("Executing linearizable read: waiting for log to catch up");
+                    // 等待直到本地处理的日志索引达到最新决定的索引
+                    while self.current_decided_idx < self.omnipaxos.get_decided_idx() {
+                        tokio::time::sleep(Duration::from_millis(10)).await;
+                    }
+                    let result = sqlx::query_scalar::<_, String>(&sql_str)
+                        .fetch_one(self.database.get_pool())
+                        .await
+                        .ok();
+                    // 在这里，你可以处理结果，比如直接回复客户端（如果本节点是协调者）：
+                    if command.coordinator_id == self.id {
+                        let response = match result {
+                            Some(res) => ServerMessage::Read(command.id, Some(res)),
+                            None => ServerMessage::Write(command.id),
+                        };
+                        self.network.send_to_client(command.client_id, response);
+                    }
+                    // 使用 continue; 结束本次循环迭代，不返回任何值
+                    continue;
                 }
             }
             // 对于insert / 普通级别的select，在本地执行
