@@ -24,6 +24,14 @@ COPY . .
 RUN cargo build --release --bin server
 
 FROM debian:bookworm-slim AS runtime
+
+# 安装 libssl3 和 ca-certificates（后者常用于 SSL 证书验证）
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libssl3 \
+        ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+    
 WORKDIR /app
 COPY --from=builder /app/target/release/server /usr/local/bin
 EXPOSE 8000

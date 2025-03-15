@@ -10,6 +10,18 @@ x-common-variables: &common-server-variables
   OMNIPAXOS_LISTEN_PORT: 8000                     # Overwrite listen_port in server config TOMLs
 
 services:
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: kv_user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: omnipaxos_kv
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
   s1:
     image: omnipaxos-server
     build:
@@ -18,10 +30,11 @@ services:
     container_name: s1
     environment:
       <<: *common-server-variables
-      DATABASE_URL: "wonderful_ellis://kv_user:password@postgres:5432/omnipaxos_kv"
-      # 如果用 Docker 部署数据库，要将主机名改成对应的容器名（如上例中使用 "postgres"），并确保网络配置正确。
+      SERVER_CONFIG_FILE: "/app/server-1-config.toml"
+      CLUSTER_CONFIG_FILE: "/app/cluster-config.toml"
+      DATABASE_URL: "postgres://kv_user:password@postgres:5432/omnipaxos_kv"
     volumes:
-      - ./server-1-config.toml:/app/server-config.toml
+      - ./server-1-config.toml:/app/server-1-config.toml
       - ./cluster-config.toml:/app/cluster-config.toml
       - ./logs/:/app/logs/
   s2:
@@ -29,9 +42,11 @@ services:
     container_name: s2
     environment:
       <<: *common-server-variables
-      DATABASE_URL: "wonderful_ellis://kv_user:password@postgres:5432/omnipaxos_kv"
+      SERVER_CONFIG_FILE: "/app/server-2-config.toml"
+      CLUSTER_CONFIG_FILE: "/app/cluster-config.toml"
+      DATABASE_URL: "postgres://kv_user:password@postgres:5432/omnipaxos_kv"
     volumes:
-      - ./server-2-config.toml:/app/server-config.toml
+      - ./server-2-config.toml:/app/server-2-config.toml
       - ./cluster-config.toml:/app/cluster-config.toml
       - ./logs/:/app/logs/
   s3:
@@ -39,9 +54,11 @@ services:
     container_name: s3
     environment:
       <<: *common-server-variables
-      DATABASE_URL: "wonderful_ellis://kv_user:password@postgres:5432/omnipaxos_kv"
+      SERVER_CONFIG_FILE: "/app/server-3-config.toml"
+      CLUSTER_CONFIG_FILE: "/app/cluster-config.toml"
+      DATABASE_URL: "postgres://kv_user:password@postgres:5432/omnipaxos_kv"
     volumes:
-      - ./server-3-config.toml:/app/server-config.toml
+      - ./server-3-config.toml:/app/server-3-config.toml
       - ./cluster-config.toml:/app/cluster-config.toml
       - ./logs/:/app/logs/
   c1:
@@ -67,3 +84,6 @@ services:
     volumes:
       - ./client-2-config.toml:/app/client-config.toml
       - ./logs/:/app/logs/
+
+volumes:
+  pgdata:
