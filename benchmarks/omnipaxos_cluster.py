@@ -338,7 +338,7 @@ class OmnipaxosClusterBuilder:
             "SERVER_DOCKER_IMAGE_NAME",
         ]
         env_vals = {}
-        process = subprocess.run(['bash', '-c', 'source ./scripts/project_env.sh && env'], check=True, stdout= subprocess.PIPE, text=True)
+        process = subprocess.run(['sh', '-c', 'source ./scripts/project_env.sh && env'], check=True, stdout= subprocess.PIPE, text=True)
         for line in process.stdout.split("\n"):
             (key, _, value) = line.partition("=")
             if key in env_keys:
