@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Initial steps:
-#  - Create GCP project "my-project-1499979282244"
+#  - Create GCP project "omnipaxos-2025-yilai"
 #  - Enable service usage API
 #  - Get gcloud CLI and run `gcloud auth login`
 
@@ -9,7 +9,7 @@ println_green() {
     printf "\033[0;32m$1\033[0m\n"
 }
 
-project_id="my-project-1499979282244"
+project_id="omnipaxos-2025-yilai"
 deployment_service_account_id=deployment
 deployment_service_account_mail="${deployment_service_account_id}@${project_id}.iam.gserviceaccount.com"
 
@@ -26,10 +26,10 @@ gcloud services enable \
   dns.googleapis.com
   # secretmanager.googleapis.com \
 
-println_green "Creating deployment service account with id '${deployment_service_account_id}'"
-gcloud iam service-accounts create "${deployment_service_account_id}" \
-  --description="Used for the deployment application" \
-  --display-name="Deployment Account"
+# println_green "Creating deployment service account with id '${deployment_service_account_id}'"
+# gcloud iam service-accounts create "${deployment_service_account_id}" \
+#   --description="Used for the deployment application" \
+#   --display-name="Deployment Account"
 
 println_green "Adding roles for service account"  
 roles="artifactregistry.createOnPushRepoAdmin storage.admin compute.admin dns.admin iam.serviceAccountUser iam.serviceAccountTokenCreator iap.tunnelResourceAccessor"
@@ -44,54 +44,54 @@ done;
 #     --target-tags=enable-ssh \
 #     --description="Allow SSH access for tagged instances"
 
-println_green "Creating private DNS zone for VPC"
-gcloud dns managed-zones create internal-network \
-        --dns-name=internal.zone. \
-        --visibility=private \
-        --description="Private DNS zone for VPC" \
-        --networks=default
+# println_green "Creating private DNS zone for VPC"
+# gcloud dns managed-zones create internal-network \
+#         --dns-name=internal.zone. \
+#         --visibility=private \
+#         --description="Private DNS zone for VPC" \
+#         --networks=default
 
 
 
 
-gcloud projects add-iam-policy-binding my-project-1499979282244 \
-    --member="user:<ADD USER HERE>" \
-    --role="projects/my-project-1499979282244/roles/masters_project_admin_role"
+# gcloud projects add-iam-policy-binding omnipaxos-2025-yilai \
+#     --member="user:chenyilai2022@gmail.com" \
+#     --role="projects/omnipaxos-2025-yilai/roles/masters_project_admin_role"
 
 
-gcloud iam roles create masters_project_admin_role \
-    --project=my-project-1499979282244 \
-    --title="MastersProjectAdminRole" \
-    --description="Custom role for Master's students using GCP Python client API" \
-    --permissions="artifactregistry.repositories.create,\
-artifactregistry.repositories.get,\
-artifactregistry.repositories.delete,\
-artifactregistry.repositories.list,\
-artifactregistry.repositories.update,\
-compute.instances.create,\
-compute.instances.delete,\
-compute.instances.get,\
-compute.instances.list,\
-compute.instances.osAdminLogin,\
-compute.instances.start,\
-compute.instances.stop,\
-compute.instances.update,\
-dns.changes.create,\
-dns.changes.get,\
-dns.changes.list,\
-dns.managedZones.create,\
-dns.managedZones.delete,\
-dns.managedZones.get,\
-dns.managedZones.list,\
-dns.managedZones.update,\
-iam.serviceAccounts.actAs,\
-iam.serviceAccounts.getAccessToken,\
-storage.buckets.create,\
-storage.buckets.delete,\
-storage.buckets.get,\
-storage.buckets.list,\
-storage.objects.create,\
-storage.objects.delete,\
-storage.objects.get,\
-storage.objects.list,\
-iap.tunnelInstances.accessViaIAP"
+# gcloud iam roles create masters_project_admin_role \
+#     --project=omnipaxos-2025-yilai \
+#     --title="MastersProjectAdminRole" \
+#     --description="Custom role for Master's students using GCP Python client API" \
+#     --permissions="artifactregistry.repositories.create,\
+# artifactregistry.repositories.get,\
+# artifactregistry.repositories.delete,\
+# artifactregistry.repositories.list,\
+# artifactregistry.repositories.update,\
+# compute.instances.create,\
+# compute.instances.delete,\
+# compute.instances.get,\
+# compute.instances.list,\
+# compute.instances.osAdminLogin,\
+# compute.instances.start,\
+# compute.instances.stop,\
+# compute.instances.update,\
+# dns.changes.create,\
+# dns.changes.get,\
+# dns.changes.list,\
+# dns.managedZones.create,\
+# dns.managedZones.delete,\
+# dns.managedZones.get,\
+# dns.managedZones.list,\
+# dns.managedZones.update,\
+# iam.serviceAccounts.actAs,\
+# iam.serviceAccounts.getAccessToken,\
+# storage.buckets.create,\
+# storage.buckets.delete,\
+# storage.buckets.get,\
+# storage.buckets.list,\
+# storage.objects.create,\
+# storage.objects.delete,\
+# storage.objects.get,\
+# storage.objects.list,\
+# iap.tunnelInstances.accessViaIAP"
