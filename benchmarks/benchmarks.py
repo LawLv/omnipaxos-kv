@@ -4,7 +4,7 @@ from omnipaxos_cluster import OmnipaxosClusterBuilder
 from omnipaxos_configs import FlexibleQuorum, RequestInterval
 
 
-def example_workload() -> dict[int, list[RequestInterval]]:
+def example_workload(read_consistency: str = "linearizable") -> dict[int, tuple[list[RequestInterval], str]]:
     experiment_duration = 10
     read_ratio = 0.50
     high_load = RequestInterval(experiment_duration, 100, read_ratio)
@@ -18,13 +18,17 @@ def example_workload() -> dict[int, list[RequestInterval]]:
             requests = [high_load, low_load]
         else:
             requests = [low_load, high_load]
-        workload[node] = requests
+        workload[node] = (requests, read_consistency)  #  让 `read_consistency` 也作为返回值
     return workload
 
 
 def example_benchmark(num_runs: int = 3):
-    # Define workload and cluster
-    workload = example_workload()
+    # 设定一致性级别，这里可以改成 "leader" 或 "local"
+    read_consistency = "local"  
+    
+    # 调用 example_workload 并获取 requests 和 read_consistency
+    workload = example_workload(read_consistency)
+
     cluster = (
         OmnipaxosClusterBuilder(1)
         .initial_leader(5)
@@ -33,12 +37,17 @@ def example_benchmark(num_runs: int = 3):
         .server(3, "us-east4-a")
         .server(4, "europe-southwest1-a")
         .server(5, "europe-west4-a")
-        .client(1, "us-west2-a", requests=workload[1])
-        .client(2, "us-south1-a", requests=workload[2])
-        .client(3, "us-east4-a", requests=workload[3])
-        .client(4, "europe-southwest1-a", requests=workload[4])
-        .client(5, "europe-west4-a", requests=workload[5])
+        .client(1, "us-west2-a", requests=workload[1][0])
+        .client(2, "us-south1-a", requests=workload[2][0])
+        .client(3, "us-east4-a", requests=workload[3][0])
+        .client(4, "europe-southwest1-a", requests=workload[4][0])
+        .client(5, "europe-west4-a", requests=workload[5][0])
     ).build()
+    cluster.change_client_config(1, read_consistency=read_consistency)
+    cluster.change_client_config(2, read_consistency=read_consistency)
+    cluster.change_client_config(3, read_consistency=read_consistency)
+    cluster.change_client_config(4, read_consistency=read_consistency)
+    cluster.change_client_config(5, read_consistency=read_consistency)
     experiment_log_dir = Path(f"./logs/example-experiment")
 
     majority_quorum = FlexibleQuorum(read_quorum_size=3, write_quorum_size=3)

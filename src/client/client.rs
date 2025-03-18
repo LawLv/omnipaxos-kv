@@ -109,8 +109,15 @@ impl Client {
         info!("{}: Waiting an extra {} seconds for pending responses...", self.id, wait_duration.as_secs());
         tokio::time::sleep(wait_duration).await;
         
-        self.network.shutdown();
-        self.save_results().expect("Failed to save results");
+        // self.network.shutdown();
+        // self.save_results().expect("Failed to save results");
+
+        // 保持客户端容器一直运行，可以无限等待或者周期性休眠
+        info!("Client finished, entering idle mode. Press Ctrl+C to exit.");
+        loop {
+            tokio::time::sleep(Duration::from_secs(3600)).await;
+        }
+
     }
 
     fn handle_server_message(&mut self, msg: ServerMessage) {
@@ -157,7 +164,7 @@ impl Client {
                 "leader" => ConsistencyLevel::Leader,
                 "linearizable" => ConsistencyLevel::Linearizable,
                 _ => ConsistencyLevel::Local,
-            };//根据配置文件的一致性读取
+            };
             (
                 format!("SELECT value FROM kv_table WHERE key = '{}';", key),
                 consistency,

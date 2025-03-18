@@ -143,6 +143,7 @@ class ClientConfig:
         requests: list[RequestInterval]
         summary_filepath: str
         output_filepath: str
+        read_consistency: str = "local"
 
     def __post_init__(self):
         self.validate()

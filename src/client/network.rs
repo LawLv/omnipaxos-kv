@@ -108,17 +108,17 @@ impl Network {
     }
 
     // Removes all server connections and ends their corresponding tasks
-    pub fn shutdown(&mut self) {
-        let connection_count = self.server_connections.len();
-        for server_connection in self.server_connections.drain(..) {
-            if let Some(connection) = server_connection {
-                connection.close();
-            }
-        }
-        for _ in 0..connection_count {
-            self.server_connections.push(None);
-        }
-    }
+    // pub fn shutdown(&mut self) {
+    //     let connection_count = self.server_connections.len();
+    //     for server_connection in self.server_connections.drain(..) {
+    //         if let Some(connection) = server_connection {
+    //             connection.close();
+    //         }
+    //     }
+    //     for _ in 0..connection_count {
+    //         self.server_connections.push(None);
+    //     }
+    // }
 }
 
 struct ServerConnection {

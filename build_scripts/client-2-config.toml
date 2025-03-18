@@ -4,7 +4,7 @@ server_address = "127.0.0.1:8002"
 summary_filepath = "./logs/client-2.json"
 output_filepath = "./logs/client-2.csv"
 
-read_consistency = "local"
+read_consistency = "leader"
 
 # Defining TOML vector of (duration_sec, requests_per_sec, read_ratio) which determines the behavior of the client requests
 [[requests]]
