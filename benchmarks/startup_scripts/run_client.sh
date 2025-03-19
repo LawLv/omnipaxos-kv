@@ -30,7 +30,7 @@ echo -e "${CLIENT_CONFIG_TOML}" > "${CONFIG_FILE}"
 
 # Ensure the container is killed when this script exits.
 # Note: will only work with ssh with -t flag
-trap cleanup EXIT SIGHUP SIGINT SIGPIPE SIGTERM SIGQUIT
+# trap cleanup EXIT SIGHUP SIGINT SIGPIPE SIGTERM SIGQUIT
 
 # Run the Docker container.
 docker run \

@@ -25,7 +25,18 @@ def example_workload(read_consistency: str = "linearizable") -> dict[int, tuple[
 def example_benchmark(num_runs: int = 3):
     # 设定一致性级别，这里可以改成 "leader" 或 "local"
     read_consistency = "local"  
-    
+    server_ips = {
+            # 1: "10.168.0.2",
+            # 2: "10.206.0.2",
+            # 3: "10.150.0.2",
+            # 4: "10.204.0.2",
+            # 5: "10.164.0.2",
+            1: "35.235.93.101",
+            2: "34.174.175.16",
+            3: "35.221.42.36",
+            4: "34.175.191.34",
+            5: "34.90.248.151",
+        }
     # 调用 example_workload 并获取 requests 和 read_consistency
     workload = example_workload(read_consistency)
 
@@ -49,6 +60,10 @@ def example_benchmark(num_runs: int = 3):
     cluster.change_client_config(4, read_consistency=read_consistency)
     cluster.change_client_config(5, read_consistency=read_consistency)
     experiment_log_dir = Path(f"./logs/example-experiment")
+    for client_id in range(1, 6):
+        cluster.change_client_config(client_id, server_address=f"{server_ips[client_id]}:8000")
+
+    print(f"Updated client server_address: {cluster._cluster_config.client_configs[1].omnipaxos_client_config.server_address}")
 
     majority_quorum = FlexibleQuorum(read_quorum_size=3, write_quorum_size=3)
     flex_quorum = FlexibleQuorum(read_quorum_size=4, write_quorum_size=2)

@@ -129,7 +129,7 @@ Run: gcloud dns managed-zones create internal-network \\
             command,
         ]
         stderr = subprocess.PIPE if capture_stderr else None
-        return subprocess.Popen(subprocess.list2cmdline(gcloud_command), shell=False, stderr=stderr, text=True)
+        return subprocess.Popen(gcloud_command, shell=False, stderr=stderr, text=True)
 
     def scp_command(
         self, instance_name: str, src_dir: str, dest_dir: Path

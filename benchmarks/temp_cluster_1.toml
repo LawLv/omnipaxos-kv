@@ -1,0 +1,7 @@
+nodes = [ 1, 2, 3, 4, 5,]
+node_addrs = [ "user-2060648700-cluster-1-server-1.internal.zone.:8000", "user-2060648700-cluster-1-server-2.internal.zone.:8000", "user-2060648700-cluster-1-server-3.internal.zone.:8000", "user-2060648700-cluster-1-server-4.internal.zone.:8000", "user-2060648700-cluster-1-server-5.internal.zone.:8000",]
+initial_leader = 5
+
+[initial_flexible_quorum]
+read_quorum_size = 3
+write_quorum_size = 3

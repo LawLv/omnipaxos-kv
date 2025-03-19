@@ -229,7 +229,8 @@ class OmnipaxosClusterBuilder:
             dns_name=instance_name,
             service_account=self._service_account,
         )
-        server_address =f"{instance_config.dns_name}.internal.zone.:{self._server_port}"
+        # server_address =f"{instance_config.dns_name}.internal.zone.:{self._server_port}"
+        server_address = f"{instance_name}.c.{self._project_id}.internal:{self._server_port}"
         server_config = ServerConfig(
             instance_config=instance_config,
             server_address=server_address,
@@ -268,6 +269,7 @@ class OmnipaxosClusterBuilder:
                 "run_container_script": self._get_run_client_script(),
             },
         )
+        
         client_config = ClientConfig(
             instance_config=instance_config,
             omnipaxos_client_config=ClientConfig.OmniPaxosKVClientConfig(
@@ -310,7 +312,14 @@ class OmnipaxosClusterBuilder:
             raise ValueError("Need to set cluster's initial leader")
 
         nodes = sorted(self._server_configs.keys())
-        node_addrs = list(map(lambda id: self._server_configs[id].server_address, nodes))
+        server_ips = {
+            1: "34.94.57.44",
+            2: "34.174.174.216",
+            3: "35.245.49.15",
+            4: "34.175.61.210",
+            5: "34.34.73.133",
+        }
+        node_addrs = list(map(lambda id: f"{server_ips[id]}:8000", nodes))
 
         cluster_config = ClusterConfig(
             omnipaxos_cluster_config=ClusterConfig.OmniPaxosKVClusterConfig(
@@ -338,7 +347,7 @@ class OmnipaxosClusterBuilder:
             "SERVER_DOCKER_IMAGE_NAME",
         ]
         env_vals = {}
-        process = subprocess.run(['sh', '-c', 'source ./scripts/project_env.sh && env'], check=True, stdout= subprocess.PIPE, text=True)
+        process = subprocess.run(['bash', '-c', '. ./scripts/project_env.sh && env'], check=True, stdout=subprocess.PIPE, text=True)
         for line in process.stdout.split("\n"):
             (key, _, value) = line.partition("=")
             if key in env_keys:
