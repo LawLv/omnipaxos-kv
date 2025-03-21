@@ -7,7 +7,7 @@ from omnipaxos_configs import FlexibleQuorum, RequestInterval
 def example_workload(read_consistency: str = "linearizable") -> dict[int, tuple[list[RequestInterval], str]]:
     experiment_duration = 10
     read_ratio = 0.50
-    high_load = RequestInterval(experiment_duration, 100, read_ratio)
+    high_load = RequestInterval(experiment_duration, 20, read_ratio)
     low_load = RequestInterval(experiment_duration, 10, read_ratio)
 
     nodes = [1, 2, 3, 4, 5]

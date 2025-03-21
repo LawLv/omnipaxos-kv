@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Function to clean up any running server container
-cleanup() {
-    docker kill server > /dev/null 2>&1
-}
-cleanup
+# cleanup() {
+#     docker kill server > /dev/null 2>&1
+# }
+# cleanup
 
 set -e
 
@@ -22,14 +22,13 @@ CONFIG_FILE=./server-config.toml
 CONTAINER_CONFIG_FILE=/server-config.toml
 CLUSTER_CONFIG_FILE=./cluster-config.toml
 CONTAINER_CLUSTER_CONFIG_FILE=/cluster-config.toml
-DATABASE_URL = "postgres://kv_user:password@35.235.93.101:5432/omnipaxos_kv"
 
 # Generate output directory
 mkdir -p "$OUTPUT_DIR"
 
 # Generate configuration files
-echo -e "$SERVER_CONFIG_TOML" > "$CONFIG_FILE"
-echo -e "$CLUSTER_CONFIG_TOML" > "$CLUSTER_CONFIG_FILE"
+# echo -e "$SERVER_CONFIG_TOML" > "$CONFIG_FILE"
+# echo -e "$CLUSTER_CONFIG_TOML" > "$CLUSTER_CONFIG_FILE"
 
 # Ensure the container is killed when this script exits.
 # Note: will only work with ssh with -t flag
@@ -39,7 +38,7 @@ echo -e "$CLUSTER_CONFIG_TOML" > "$CLUSTER_CONFIG_FILE"
 docker run \
     --init \
     --name server \
-    -p 8000:8000" \
+    -p 8000:8000 \
     --env RUST_LOG="$RUST_LOG" \
     --env SERVER_CONFIG_FILE="$CONTAINER_CONFIG_FILE" \
     --env CLUSTER_CONFIG_FILE="$CONTAINER_CLUSTER_CONFIG_FILE" \

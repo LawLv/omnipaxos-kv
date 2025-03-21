@@ -31,6 +31,27 @@ impl Database {
         .await
         .expect("Failed to create kv_table");
         Self { pool }
+        // // 只有编号为 "1" 的服务器负责建表
+        // if let Ok(server_id) = env::var("SERVER_ID") {
+        //     if server_id == "1" {
+        //         // 执行建表操作
+        //         sqlx::query(
+        //             "CREATE TABLE IF NOT EXISTS kv_table (
+        //                 key TEXT PRIMARY KEY,
+        //                 value TEXT
+        //             );"
+        //         )
+        //         .execute(&pool)
+        //         .await
+        //         .expect("Failed to create kv_table");
+        //         log::info!("服务器编号为 1, 已创建 kv_table");
+        //     } else {
+        //         log::info!("服务器编号不是 1, 不执行建表操作");
+        //     }
+        // } else {
+        //     log::warn!("没有设置 SERVER_ID 环境变量，默认不执行建表操作");
+        // }
+        // Self { pool }
     }
     pub fn get_pool(&self) -> &sqlx::PgPool {
         &self.pool

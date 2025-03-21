@@ -41,7 +41,8 @@ class OmnipaxosCluster:
         )
         self._gcp_cluster = GcpCluster(project_id, instance_configs)
         kill_command = (
-            "docker kill client > /dev/null 2>&1; docker kill server > /dev/null 2>&1"
+            # "docker kill client > /dev/null 2>&1; docker kill server > /dev/null 2>&1"
+            # "docker kill client > /dev/null 2>&1"  # 只杀死 client，不杀死 server
         )
         self._gcp_ssh_client = GcpClusterSSHClient(self._gcp_cluster, kill_command)
 
@@ -313,11 +314,11 @@ class OmnipaxosClusterBuilder:
 
         nodes = sorted(self._server_configs.keys())
         server_ips = {
-            1: "34.94.57.44",
-            2: "34.174.174.216",
-            3: "35.245.49.15",
-            4: "34.175.61.210",
-            5: "34.34.73.133",
+            1: "35.235.93.101",
+            2: "34.174.175.16",
+            3: "35.221.42.36",
+            4: "34.175.191.34",
+            5: "34.90.248.151",
         }
         node_addrs = list(map(lambda id: f"{server_ips[id]}:8000", nodes))
 
